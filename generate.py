@@ -115,6 +115,10 @@ def main():
     print(f"  {len(imacec)} registros")
 
     monthly = build_monthly(dolar, tpm, ipc, imacec)
+    print(f"  Monthly records: {len(monthly)}")
+    if monthly:
+        print(f"  Primer mes: {monthly[0]}")
+        print(f"  Ultimo mes: {monthly[-1]}")
 
     today_dolar = dolar[-1] if dolar else None
     today_tpm = tpm[-1] if tpm else None
