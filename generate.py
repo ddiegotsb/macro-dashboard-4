@@ -41,7 +41,14 @@ def fetch(series_id, first, last):
     result = []
     for o in obs:
         try:
-            result.append({"fecha": o["indexDateString"], "valor": float(o["value"])})
+            raw_fecha = o["indexDateString"]
+            # API devuelve DD-MM-YYYY, convertir a YYYY-MM-DD
+            parts = raw_fecha.split("-")
+            if len(parts) == 3 and len(parts[2]) == 4:
+                fecha = f"{parts[2]}-{parts[1]}-{parts[0]}"
+            else:
+                fecha = raw_fecha
+            result.append({"fecha": fecha, "valor": float(o["value"])})
         except (KeyError, ValueError):
             pass
     return result
