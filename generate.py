@@ -55,7 +55,11 @@ def build_monthly(dolar, tpm, ipc, imacec):
     for d in tpm:
         m = d["fecha"][:7]
         if m in by_month:
-            by_month[m]["tpm"] = d["valor"]
+            val = d["valor"]
+            # API may return as fraction (0.045) instead of percent (4.5)
+            if val is not None and val < 1:
+                val = round(val * 100, 4)
+            by_month[m]["tpm"] = val
     for d in ipc:
         m = d["fecha"][:7]
         if m in by_month:
@@ -103,7 +107,10 @@ def main():
     monthly = build_monthly(dolar, tpm, ipc, imacec)
 
     today_dolar = dolar[-1] if dolar else None
-    today_tpm   = tpm[-1]   if tpm   else None
+    today_tpm_raw = tpm[-1] if tpm else None
+    if today_tpm_raw and today_tpm_raw["valor"] < 1:
+        today_tpm_raw = {"fecha": today_tpm_raw["fecha"], "valor": round(today_tpm_raw["valor"] * 100, 4)}
+    today_tpm = today_tpm_raw
     last_ipc    = ipc[-1]   if ipc   else None
     last_imacec = imacec[-1] if imacec else None
 
