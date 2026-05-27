@@ -42,15 +42,22 @@ def fetch(series_id, first, last):
     for o in obs:
         try:
             raw_fecha = o["indexDateString"]
-            # API devuelve DD-MM-YYYY, convertir a YYYY-MM-DD
             parts = raw_fecha.split("-")
+            # Detectar formato: si el ultimo segmento tiene 4 digitos es DD-MM-YYYY
             if len(parts) == 3 and len(parts[2]) == 4:
                 fecha = f"{parts[2]}-{parts[1]}-{parts[0]}"
+            # Si el primero tiene 4 digitos ya es YYYY-MM-DD
+            elif len(parts) == 3 and len(parts[0]) == 4:
+                fecha = raw_fecha
             else:
                 fecha = raw_fecha
             result.append({"fecha": fecha, "valor": float(o["value"])})
         except (KeyError, ValueError):
             pass
+    # Print first 2 records for debugging
+    if result:
+        print(f"  Primer registro: {result[0]}")
+        print(f"  Ultimo registro: {result[-1]}")
     return result
 
 def build_monthly(dolar, tpm, ipc, imacec):
@@ -62,11 +69,7 @@ def build_monthly(dolar, tpm, ipc, imacec):
     for d in tpm:
         m = d["fecha"][:7]
         if m in by_month:
-            val = d["valor"]
-            # API may return as fraction (0.045) instead of percent (4.5)
-            if val is not None and val < 1:
-                val = round(val * 100, 4)
-            by_month[m]["tpm"] = val
+            by_month[m]["tpm"] = d["valor"]
     for d in ipc:
         m = d["fecha"][:7]
         if m in by_month:
@@ -114,10 +117,7 @@ def main():
     monthly = build_monthly(dolar, tpm, ipc, imacec)
 
     today_dolar = dolar[-1] if dolar else None
-    today_tpm_raw = tpm[-1] if tpm else None
-    if today_tpm_raw and today_tpm_raw["valor"] < 1:
-        today_tpm_raw = {"fecha": today_tpm_raw["fecha"], "valor": round(today_tpm_raw["valor"] * 100, 4)}
-    today_tpm = today_tpm_raw
+    today_tpm = tpm[-1] if tpm else None
     last_ipc    = ipc[-1]   if ipc   else None
     last_imacec = imacec[-1] if imacec else None
 
