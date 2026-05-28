@@ -1,7 +1,7 @@
 import requests
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # ─── CONFIG ────────────────────────────────────────────────────────────────
 API_BASE = "https://si3.bcentral.cl/SieteRestWS/SieteRestWS.ashx"
@@ -133,7 +133,6 @@ def main():
     last_ipc    = ipc[-1]   if ipc   else None
     last_imacec = imacec[-1] if imacec else None
 
-    from datetime import timezone, timedelta
     chile_tz = timezone(timedelta(hours=-4))
     updated_at = datetime.now(chile_tz).strftime("%d/%m/%Y %H:%M hora Chile")
 
