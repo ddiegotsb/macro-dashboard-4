@@ -29,11 +29,11 @@
   .update-time{font-size:9px;color:var(--muted)}
   .kpi-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));
     gap:1px;border-bottom:1px solid var(--border);background:var(--border)}
-  .kpi{background:var(--surface);padding:14px 20px}
+  .kpi{background:var(--surface);padding:20px 28px}
   .kpi-label{font-size:9px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
-  .kpi-val{font-size:20px;font-weight:700;margin-top:4px}
-  .kpi-delta{font-size:9px;margin-top:3px}
-  .kpi-sub{font-size:8px;color:#374151;margin-top:2px}
+  .kpi-val{font-size:24px;font-weight:700;margin-top:6px}
+  .kpi-delta{font-size:10px;margin-top:4px}
+  .kpi-sub{font-size:9px;color:var(--muted);margin-top:3px}
   .up{color:var(--accent4)}.down{color:var(--accent3)}.neutral{color:var(--muted)}
   .toolbar{padding:10px 20px;border-bottom:1px solid var(--border);
     display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -85,7 +85,7 @@
   </div>
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
     <div class="live-badge"><div class="live-dot"></div> DATOS DEL DÍA</div>
-    <div class="update-time">Actualizado: 28/05/2026 00:08 UTC</div>
+    <div class="update-time">Actualizado: 28/05/2026 00:13 UTC</div>
   </div>
 </header>
 
@@ -147,15 +147,20 @@ document.getElementById('headerSub').textContent = `Dólar · TPM · IPC · IMAC
 function renderKPIs() {
   const last = MONTHLY[MONTHLY.length-1];
   const prev = MONTHLY[MONTHLY.length-2];
-  const dolarMax = Math.max(...MONTHLY.map(m => m.dolarMax));
+  const dolarMax = Math.max(...MONTHLY.filter(m=>m.dolarMax&&!isNaN(m.dolarMax)).map(m => m.dolarMax));
+  // Buscar último mes con IPC e IMACEC no nulos
+  const lastIpc    = [...MONTHLY].reverse().find(m => m.ipc    !== null);
+  const lastImacec = [...MONTHLY].reverse().find(m => m.imacec !== null);
+  const prevIpc    = lastIpc    ? MONTHLY[MONTHLY.indexOf(lastIpc)-1]    : null;
+  const prevImacec = lastImacec ? MONTHLY[MONTHLY.indexOf(lastImacec)-1] : null;
   const items = [
     { label:'DÓLAR HOY', val: TODAY_DOLAR ? '$'+TODAY_DOLAR.valor.toFixed(0) : '—', sub: TODAY_DOLAR?.fecha||'' },
     { label:'TPM ACTUAL', val: last.tpm!==null ? last.tpm+'%':'—',
        delta: prev ? last.tpm-prev.tpm : null, unit:'%', upBad:false },
-    { label:'IPC ÚLT. MES', val: last.ipc!==null ? (last.ipc>0?'+':'')+last.ipc+'%':'—',
-       delta: prev&&last.ipc!==null&&prev.ipc!==null ? last.ipc-prev.ipc : null, unit:'%', upBad:true },
-    { label:'IMACEC ÚLT.', val: last.imacec!==null ? last.imacec.toFixed(1):'—',
-       delta: prev&&last.imacec!==null&&prev.imacec!==null ? last.imacec-prev.imacec : null, unit:'', upBad:false },
+    { label:'IPC ÚLT. MES', val: lastIpc ? (lastIpc.ipc>0?'+':'')+lastIpc.ipc+'%':'—',
+       delta: prevIpc&&lastIpc ? lastIpc.ipc-prevIpc.ipc : null, unit:'%', upBad:true, sub: lastIpc?.mes||'' },
+    { label:'IMACEC ÚLT.', val: lastImacec ? lastImacec.imacec.toFixed(1):'—',
+       delta: prevImacec&&lastImacec ? lastImacec.imacec-prevImacec.imacec : null, unit:'', upBad:false, sub: lastImacec?.mes||'' },
     { label:'MÁX DÓLAR HIST.', val: dolarMax&&!isNaN(dolarMax)?'$'+Math.round(dolarMax):'—', sub:'histórico' },
     { label:'DÓLAR MES ANT.', val: prev&&prev.dolarProm&&!isNaN(prev.dolarProm)?'$'+Math.round(prev.dolarProm):'—', sub:prev?.mes||'' },
   ];
