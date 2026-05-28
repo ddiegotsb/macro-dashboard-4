@@ -85,7 +85,7 @@
   </div>
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
     <div class="live-badge"><div class="live-dot"></div> DATOS DEL DÍA</div>
-    <div class="update-time">Actualizado: 28/05/2026 00:04 UTC</div>
+    <div class="update-time">Actualizado: 28/05/2026 00:08 UTC</div>
   </div>
 </header>
 
@@ -156,8 +156,8 @@ function renderKPIs() {
        delta: prev&&last.ipc!==null&&prev.ipc!==null ? last.ipc-prev.ipc : null, unit:'%', upBad:true },
     { label:'IMACEC ÚLT.', val: last.imacec!==null ? last.imacec.toFixed(1):'—',
        delta: prev&&last.imacec!==null&&prev.imacec!==null ? last.imacec-prev.imacec : null, unit:'', upBad:false },
-    { label:'MÁX DÓLAR HIST.', val:'$'+dolarMax.toFixed(0), sub:'histórico' },
-    { label:'DÓLAR MES ANT.', val: prev ? '$'+prev.dolarProm.toFixed(0):'—', sub:prev?.mes||'' },
+    { label:'MÁX DÓLAR HIST.', val: dolarMax&&!isNaN(dolarMax)?'$'+Math.round(dolarMax):'—', sub:'histórico' },
+    { label:'DÓLAR MES ANT.', val: prev&&prev.dolarProm&&!isNaN(prev.dolarProm)?'$'+Math.round(prev.dolarProm):'—', sub:prev?.mes||'' },
   ];
   document.getElementById('kpiStrip').innerHTML = items.map(k => {
     let d = '';
@@ -257,9 +257,9 @@ function renderTable() {
       const tag = prev ? `<span class="tag ${dd>0?'tag-up':'tag-dn'}">${dd>0?'▲':'▼'}</span>` : '';
       const isNow = r.mes===todayMes;
       return `<tr><td>${r.mes} ${isNow?'<span class="tag tag-new">HOY</span>':''}</td>
-        <td>$${r.dolarProm.toFixed(0)} ${tag}</td>
-        <td style="color:var(--accent3)">$${r.dolarMin.toFixed(0)}</td>
-        <td style="color:var(--accent4)">$${r.dolarMax.toFixed(0)}</td>
+        <td>${r.dolarProm!=null&&!isNaN(r.dolarProm)?'$'+Math.round(r.dolarProm):'—'} ${tag}</td>
+        <td style="color:var(--accent3)">${r.dolarMin!=null&&!isNaN(r.dolarMin)?'$'+Math.round(r.dolarMin):'—'}</td>
+        <td style="color:var(--accent4)">${r.dolarMax!=null&&!isNaN(r.dolarMax)?'$'+Math.round(r.dolarMax):'—'}</td>
         <td style="color:var(--accent2)">${r.tpm!==null?r.tpm+'%':'—'}</td>
         <td style="color:${r.ipc>0.8?'var(--accent4)':r.ipc<0?'var(--accent3)':'var(--text)'}">${r.ipc!==null?(r.ipc>0?'+':'')+r.ipc+'%':'—'}</td>
         <td>${r.imacec!==null?r.imacec.toFixed(1):'—'}</td></tr>`;
