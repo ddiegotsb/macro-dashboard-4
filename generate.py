@@ -10,6 +10,7 @@ PASS = os.environ["BCENTRAL_PASS"]
 
 SERIES = {
     "dolar":  "F073.TCO.PRE.Z.D",
+    "uf":     "F073.UFF.PRE.Z.D",
     "tpm":    "F022.TPM.TIN.D001.NO.Z.D",
     "ipc":    "F074.IPC.VAR.Z.Z.C.M",
     "imacec": "F032.IMC.IND.Z.Z.EP18.Z.Z.0.M",
@@ -64,12 +65,16 @@ def fetch(series_id, first, last):
         print(f"  Ultimo registro: {result[-1]}")
     return result
 
-def build_monthly(dolar, tpm, ipc, imacec):
+def build_monthly(dolar, uf, tpm, ipc, imacec):
     by_month = {}
     for d in dolar:
         m = d["fecha"][:7]
-        by_month.setdefault(m, {"dolar": [], "tpm": None, "ipc": None, "imacec": None})
+        by_month.setdefault(m, {"dolar": [], "uf": [], "tpm": None, "ipc": None, "imacec": None})
         by_month[m]["dolar"].append(d["valor"])
+    for d in uf:
+        m = d["fecha"][:7]
+        if m in by_month:
+            by_month[m]["uf"].append(d["valor"])
     for d in tpm:
         m = d["fecha"][:7]
         if m in by_month:
@@ -92,11 +97,15 @@ def build_monthly(dolar, tpm, ipc, imacec):
         vals_clean = [v for v in vals if v == v]  # nan != nan
         if not vals_clean:
             continue
+        uf_vals = [v for v in by_month[m]["uf"] if v == v]
         monthly.append({
             "mes": m,
             "dolarProm": round(sum(vals_clean) / len(vals_clean), 2),
             "dolarMin":  round(min(vals_clean), 2),
             "dolarMax":  round(max(vals_clean), 2),
+            "ufProm":  round(sum(uf_vals) / len(uf_vals), 2) if uf_vals else None,
+            "ufMin":   round(min(uf_vals), 2) if uf_vals else None,
+            "ufMax":   round(max(uf_vals), 2) if uf_vals else None,
             "tpm":    by_month[m]["tpm"],
             "ipc":    by_month[m]["ipc"],
             "imacec": by_month[m]["imacec"],
@@ -111,6 +120,10 @@ def main():
     dolar = fetch(SERIES["dolar"], first, today)
     print(f"  {len(dolar)} registros")
 
+    print("Fetching UF...")
+    uf = fetch(SERIES["uf"], first, today)
+    print(f"  {len(uf)} registros")
+
     print("Fetching TPM...")
     tpm = fetch(SERIES["tpm"], first, today)
     print(f"  {len(tpm)} registros")
@@ -122,13 +135,14 @@ def main():
     imacec = fetch(SERIES["imacec"], first, today)
     print(f"  {len(imacec)} registros")
 
-    monthly = build_monthly(dolar, tpm, ipc, imacec)
+    monthly = build_monthly(dolar, uf, tpm, ipc, imacec)
     print(f"  Monthly records: {len(monthly)}")
     if monthly:
         print(f"  Primer mes: {monthly[0]}")
         print(f"  Ultimo mes: {monthly[-1]}")
 
     today_dolar = dolar[-1] if dolar else None
+    today_uf    = uf[-1]    if uf    else None
     today_tpm = tpm[-1] if tpm else None
     last_ipc    = ipc[-1]   if ipc   else None
     last_imacec = imacec[-1] if imacec else None
@@ -140,12 +154,14 @@ def main():
     os.makedirs("docs", exist_ok=True)
     with open("docs/data.json", "w") as f:
         json.dump({"monthly": monthly, "today_dolar": today_dolar,
-                   "today_tpm": today_tpm, "last_ipc": last_ipc,
-                   "last_imacec": last_imacec}, f)
+                   "today_uf": today_uf, "today_tpm": today_tpm,
+                   "last_ipc": last_ipc, "last_imacec": last_imacec}, f)
 
     # ─── Generate HTML ──────────────────────────────────────────────────────
     monthly_json  = json.dumps(monthly)
     dolar_json    = json.dumps(today_dolar)
+    uf_json       = json.dumps(today_uf)
+    uf_json       = json.dumps(today_uf)
     tpm_json      = json.dumps(today_tpm)
     ipc_json      = json.dumps(last_ipc)
     imacec_json   = json.dumps(last_imacec)
@@ -278,6 +294,10 @@ def main():
     <div class="chart-wrap"><canvas id="imacecChart"></canvas></div>
   </div>
   <div class="panel full">
+    <div class="panel-title"><span class="dot" style="background:#34d399"></span> UF (UNIDAD DE FOMENTO)</div>
+    <div class="chart-wrap"><canvas id="ufChart"></canvas></div>
+  </div>
+  <div class="panel full">
     <div class="panel-title"><span class="dot" style="background:var(--muted)"></span> ÚLTIMOS 18 MESES</div>
     <div style="overflow-x:auto"><table class="mini-table" id="dataTable"></table></div>
   </div>
@@ -286,6 +306,7 @@ def main():
 <script>
 const MONTHLY = {monthly_json};
 const TODAY_DOLAR  = {dolar_json};
+const TODAY_UF     = {uf_json};
 const TODAY_TPM    = {tpm_json};
 const LAST_IPC     = {ipc_json};
 const LAST_IMACEC  = {imacec_json};
@@ -310,6 +331,7 @@ function renderKPIs() {{
   const prevImacec = lastImacec ? MONTHLY[MONTHLY.indexOf(lastImacec)-1] : null;
   const items = [
     {{ label:'DÓLAR HOY', val: TODAY_DOLAR ? '$'+TODAY_DOLAR.valor.toFixed(0) : '—', sub: TODAY_DOLAR?.fecha||'' }},
+    {{ label:'UF HOY', val: TODAY_UF ? '$'+TODAY_UF.valor.toFixed(2) : '—', sub: TODAY_UF?.fecha||'' }},
     {{ label:'TPM ACTUAL', val: last.tpm!==null ? last.tpm+'%':'—',
        delta: prev ? last.tpm-prev.tpm : null, unit:'%', upBad:false }},
     {{ label:'IPC ÚLT. MES', val: lastIpc ? (lastIpc.ipc>0?'+':'')+lastIpc.ipc+'%':'—',
@@ -336,6 +358,9 @@ function renderToday() {{
     <div><div class="th-label">DÓLAR OBSERVADO</div>
       <div class="th-val" style="color:var(--accent)">${{TODAY_DOLAR?'$'+TODAY_DOLAR.valor.toFixed(2):'—'}}</div>
       <div class="th-date">${{TODAY_DOLAR?.fecha||''}}</div></div>
+    <div><div class="th-label">UF DEL DÍA</div>
+      <div class="th-val" style="color:#34d399">${{TODAY_UF?'$'+TODAY_UF.valor.toFixed(2):'—'}}</div>
+      <div class="th-date">${{TODAY_UF?.fecha||''}}</div></div>
     <div><div class="th-label">TASA POLÍTICA MONETARIA</div>
       <div class="th-val" style="color:var(--accent2)">${{TODAY_TPM?TODAY_TPM.valor+'%':'—'}}</div>
       <div class="th-date">${{TODAY_TPM?.fecha||''}}</div></div>
@@ -403,6 +428,15 @@ function renderCharts() {{
     }}]}},
     options:CB
   }});
+
+  destroyChart('uf');
+  charts['uf'] = new Chart(document.getElementById('ufChart'), {{
+    type:'line', data:{{labels, datasets:[{{label:'UF',data:d.map(r=>r.ufProm),
+      borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.07)',
+      borderWidth:1.5,pointRadius:0,fill:true,tension:.3
+    }}]}},
+    options:CB
+  }});
 }}
 
 // Table
@@ -410,7 +444,7 @@ function renderTable() {{
   const last18 = MONTHLY.slice(-18).reverse();
   const todayMes = TODAY_DOLAR?.fecha?.slice(0,7);
   document.getElementById('dataTable').innerHTML = `
-    <thead><tr><th>MES</th><th>DÓLAR PROM</th><th>MÍN</th><th>MÁX</th><th>TPM</th><th>IPC</th><th>IMACEC</th></tr></thead>
+    <thead><tr><th>MES</th><th>DÓLAR PROM</th><th>MÍN</th><th>MÁX</th><th>TPM</th><th>IPC</th><th>IMACEC</th><th>UF PROM</th></tr></thead>
     <tbody>${{last18.map((r,i) => {{
       const prev = last18[i+1];
       const dd = prev ? r.dolarProm - prev.dolarProm : 0;
@@ -422,7 +456,8 @@ function renderTable() {{
         <td style="color:var(--accent4)">${{r.dolarMax!=null&&!isNaN(r.dolarMax)?'$'+Math.round(r.dolarMax):'—'}}</td>
         <td style="color:var(--accent2)">${{r.tpm!==null?r.tpm+'%':'—'}}</td>
         <td style="color:${{r.ipc>0.8?'var(--accent4)':r.ipc<0?'var(--accent3)':'var(--text)'}}">${{r.ipc!==null?(r.ipc>0?'+':'')+r.ipc+'%':'—'}}</td>
-        <td>${{r.imacec!==null?r.imacec.toFixed(1):'—'}}</td></tr>`;
+        <td>${{r.imacec!==null?r.imacec.toFixed(1):'—'}}</td>
+        <td style='color:#34d399'>${{r.ufProm!=null&&!isNaN(r.ufProm)?'$'+Math.round(r.ufProm):'—'}}</td></tr>`;
     }}).join('')}}</tbody>`;
 }}
 
