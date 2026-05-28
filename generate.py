@@ -133,7 +133,9 @@ def main():
     last_ipc    = ipc[-1]   if ipc   else None
     last_imacec = imacec[-1] if imacec else None
 
-    updated_at = datetime.today().strftime("%d/%m/%Y %H:%M UTC")
+    from datetime import timezone, timedelta
+    chile_tz = timezone(timedelta(hours=-4))
+    updated_at = datetime.now(chile_tz).strftime("%d/%m/%Y %H:%M hora Chile")
 
     # Save data as JSON for reference
     os.makedirs("docs", exist_ok=True)
@@ -168,10 +170,10 @@ def main():
   header{{padding:20px 28px 16px;border-bottom:1px solid var(--border);
     display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}}
   .logo{{display:flex;align-items:center;gap:12px}}
-  .logo-icon{{width:36px;height:36px;background:var(--accent);border-radius:6px;
-    display:flex;align-items:center;justify-content:center;font-size:18px}}
-  h1{{font-size:16px;letter-spacing:.05em;font-weight:700}}
-  .subtitle{{font-size:10px;color:var(--muted);letter-spacing:.1em;margin-top:2px}}
+  .logo-icon{{width:40px;height:40px;background:var(--accent);border-radius:6px;
+    display:flex;align-items:center;justify-content:center;font-size:20px}}
+  h1{{font-size:20px;letter-spacing:.05em;font-weight:700}}
+  .subtitle{{font-size:12px;color:var(--muted);letter-spacing:.08em;margin-top:4px}}
   .live-badge{{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--accent3);
     letter-spacing:.1em;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);
     padding:4px 10px;border-radius:20px}}
