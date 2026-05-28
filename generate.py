@@ -51,7 +51,11 @@ def fetch(series_id, first, last):
                 fecha = raw_fecha
             else:
                 fecha = raw_fecha
-            result.append({"fecha": fecha, "valor": float(o["value"])})
+            valor = float(o["value"])
+            import math
+            if math.isnan(valor):
+                continue
+            result.append({"fecha": fecha, "valor": valor})
         except (KeyError, ValueError):
             pass
     # Print first 2 records for debugging
@@ -84,11 +88,15 @@ def build_monthly(dolar, tpm, ipc, imacec):
         vals = by_month[m]["dolar"]
         if not vals:
             continue
+        # Filtrar valores nan
+        vals_clean = [v for v in vals if v == v]  # nan != nan
+        if not vals_clean:
+            continue
         monthly.append({
             "mes": m,
-            "dolarProm": round(sum(vals) / len(vals), 2),
-            "dolarMin":  round(min(vals), 2),
-            "dolarMax":  round(max(vals), 2),
+            "dolarProm": round(sum(vals_clean) / len(vals_clean), 2),
+            "dolarMin":  round(min(vals_clean), 2),
+            "dolarMax":  round(max(vals_clean), 2),
             "tpm":    by_month[m]["tpm"],
             "ipc":    by_month[m]["ipc"],
             "imacec": by_month[m]["imacec"],
