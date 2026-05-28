@@ -204,7 +204,10 @@ def main():
   .legend{{display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap}}
   .legend-item{{display:flex;align-items:center;gap:6px;font-size:9px;color:var(--muted)}}
   .today-box{{background:var(--surface2);border:1px solid var(--border);border-radius:6px;
-    padding:16px 20px;margin-bottom:16px;display:flex;gap:32px;flex-wrap:wrap}}
+    padding:20px 28px;margin-bottom:16px;display:flex;gap:0;flex-wrap:wrap;justify-content:space-between}}
+  .today-box>div{{flex:1;min-width:150px;padding:0 16px;border-right:1px solid var(--border)}}
+  .today-box>div:first-child{{padding-left:0}}
+  .today-box>div:last-child{{border-right:none}}
   .th-label{{font-size:9px;color:var(--muted);letter-spacing:.1em}}
   .th-val{{font-size:20px;font-weight:700;margin-top:2px}}
   .th-date{{font-size:9px;color:var(--muted);margin-top:2px}}
